@@ -209,7 +209,7 @@ VideoJS.extend({
     VideoJS.DOMReady(VideoJS.setup);
     if (fn) { VideoJS.DOMReady(fn); }
   },
-
+  
   // Backward compatability. Changed to just SetupAll
   setupAllWhenReady: function(options){ VideoJS.setupAll(options); },
 

@@ -10,6 +10,8 @@ VideoJS.fn.extend({
 
   triggerListeners: function(type, e){
     this.each(this.listeners[type], function(listener){
+      e || (e = {});
+      e.target = this;
       listener.call(this, e);
     });
   },

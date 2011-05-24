@@ -9,8 +9,11 @@ VideoJS.fn.newBehavior("player", function(player){
     this.addListener("error", this.playerOnVideoError);
     this.addListener("play", this.playerOnVideoPlay);
     this.addListener("play", this.trackCurrentTime);
+    this.addListener("play", this.trackPlayerState);
     this.addListener("pause", this.stopTrackingCurrentTime);
+    this.addListener("pause", this.trackPlayerState);
     this.addListener("ended", this.playerOnVideoEnded);
+    this.addListener("ended", this.trackPlayerState);
     this.trackBuffered();
     this.addListener("bufferedupdate", this.bufferFull);
   },{
@@ -61,6 +64,25 @@ VideoJS.fn.newBehavior("player", function(player){
     stopTrackingCurrentTime: function(){
       clearInterval(this.currentTimeInterval);
       this.trackingCurrentTime = false;
+    },
+
+    /* State Tracking ------------------------------------------------------------- */
+    trackPlayerState: function(event) {
+        var stateMap = {
+             "unstarted" : -1,
+             "ended" : 0,
+             "play" : 1,
+             "pause" : 2,
+             "buffering" : 3,
+             "booyah" : 4,
+             "video cued" : 5
+        };
+
+        var newState = stateMap(event.type || "unstarted");
+        if (newState !== this.state) {
+            this.triggerListeners("stateChange", {data: newState});
+        }
+        this.state = newState;
     }
   }
 );

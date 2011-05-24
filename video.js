@@ -209,7 +209,7 @@ VideoJS.extend({
     VideoJS.DOMReady(VideoJS.setup);
     if (fn) { VideoJS.DOMReady(fn); }
   },
-
+  
   // Backward compatability. Changed to just SetupAll
   setupAllWhenReady: function(options){ VideoJS.setupAll(options); },
 
@@ -339,6 +339,9 @@ VideoJS.fn.extend({
 
   triggerListeners: function(type, e){
     this.each(this.listeners[type], function(listener){
+      e || (e = {});
+      e.target = this;
+      e.type = e.type || type;
       listener.call(this, e);
     });
   },
@@ -354,8 +357,15 @@ VideoJS.fn.extend({
   },
 
   play: function(){ this.api.play.apply(this); return this; },
+  playVideo: function(){ return this.play(); },
   pause: function(){ this.api.pause.apply(this); return this; },
+  pauseVideo: function(){ return this.pause();},
   paused: function(){ return this.api.paused.apply(this); },
+
+  stopVideo: function() {
+      this.currentTime(0);
+      this.pause();
+  },
 
   currentTime: function(seconds){
     if (seconds !== undefined) {
@@ -365,8 +375,10 @@ VideoJS.fn.extend({
     }
     return this.api.currentTime.apply(this);
   },
+  getCurrentTime: function() { return this.api.currentTime.apply(this); },
 
   duration: function(){ return this.api.duration.apply(this); },
+  getDuration: function() { return this.api.duration.apply(this); },
 
   buffered: function(){
     var buffered = this.api.buffered.apply(this),
@@ -404,6 +416,10 @@ VideoJS.fn.extend({
     return this.api.volume.call(this);
   },
 
+  mute: function() { return this.volume(0); },
+  unMute: function() { return this.volume(this.defaultVolume); },
+  isMuted: function() { return (this.volume() === 0); },
+
   width: function(width, skipListeners){
     if (width !== undefined) {
       this.element.width = width; // Not using style so it can be overridden on fullscreen.
@@ -428,6 +444,7 @@ VideoJS.fn.extend({
     // Skip resize listeners on width for optimization
     return this.width(width, true).height(height);
   },
+  setSize: function(width, height){ return this.size(width, height); },
 
   supportsFullScreen: function(){ return this.api.supportsFullScreen.call(this); },
 
@@ -1025,8 +1042,11 @@ VideoJS.fn.newBehavior("player", function(player){
     this.addListener("error", this.playerOnVideoError);
     this.addListener("play", this.playerOnVideoPlay);
     this.addListener("play", this.trackCurrentTime);
+    this.addListener("play", this.trackPlayerState);
     this.addListener("pause", this.stopTrackingCurrentTime);
+    this.addListener("pause", this.trackPlayerState);
     this.addListener("ended", this.playerOnVideoEnded);
+    this.addListener("ended", this.trackPlayerState);
     this.trackBuffered();
     this.addListener("bufferedupdate", this.bufferFull);
   },{
@@ -1077,6 +1097,25 @@ VideoJS.fn.newBehavior("player", function(player){
     stopTrackingCurrentTime: function(){
       clearInterval(this.currentTimeInterval);
       this.trackingCurrentTime = false;
+    },
+
+    /* State Tracking ------------------------------------------------------------- */
+    trackPlayerState: function(event) {
+        var stateMap = {
+             "unstarted" : -1,
+             "ended" : 0,
+             "play" : 1,
+             "pause" : 2,
+             "buffering" : 3,
+             "booyah" : 4,
+             "video cued" : 5
+        };
+
+        var newState = stateMap(event.type || "unstarted");
+        if (newState !== this.state) {
+            this.triggerListeners("stateChange", {data: newState});
+        }
+        this.state = newState;
     }
   }
 );
@@ -1812,9 +1851,10 @@ if (window.jQuery) {
 
   })(jQuery);
 }
+
+
 // Expose to global
 window.VideoJS = window._V_ = VideoJS;
 
 // End self-executing function
 })(window);
-

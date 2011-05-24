@@ -12,6 +12,7 @@ VideoJS.fn.extend({
     this.each(this.listeners[type], function(listener){
       e || (e = {});
       e.target = this;
+      e.type = e.type || type;
       listener.call(this, e);
     });
   },
@@ -27,8 +28,15 @@ VideoJS.fn.extend({
   },
 
   play: function(){ this.api.play.apply(this); return this; },
+  playVideo: function(){ return this.play(); },
   pause: function(){ this.api.pause.apply(this); return this; },
+  pauseVideo: function(){ return this.pause();},
   paused: function(){ return this.api.paused.apply(this); },
+
+  stopVideo: function() {
+      this.currentTime(0);
+      this.pause();
+  },
 
   currentTime: function(seconds){
     if (seconds !== undefined) {
@@ -38,8 +46,10 @@ VideoJS.fn.extend({
     }
     return this.api.currentTime.apply(this);
   },
+  getCurrentTime: function() { return this.api.currentTime.apply(this); },
 
   duration: function(){ return this.api.duration.apply(this); },
+  getDuration: function() { return this.api.duration.apply(this); },
 
   buffered: function(){
     var buffered = this.api.buffered.apply(this),
@@ -77,6 +87,10 @@ VideoJS.fn.extend({
     return this.api.volume.call(this);
   },
 
+  mute: function() { return this.volume(0); },
+  unMute: function() { return this.volume(this.defaultVolume); },
+  isMuted: function() { return (this.volume() === 0); },
+
   width: function(width, skipListeners){
     if (width !== undefined) {
       this.element.width = width; // Not using style so it can be overridden on fullscreen.
@@ -101,6 +115,7 @@ VideoJS.fn.extend({
     // Skip resize listeners on width for optimization
     return this.width(width, true).height(height);
   },
+  setSize: function(width, height){ return this.size(width, height); },
 
   supportsFullScreen: function(){ return this.api.supportsFullScreen.call(this); },
 

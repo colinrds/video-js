@@ -53,3 +53,10 @@ VideoJS.flashPlayers.htmlObject = {
   api: {} // No video API available with HTML Object embed method
 };
 
+VideoJS.flashPlayers.wbxVideoPlayer = {
+  flashPlayerVersion: 8,
+  //TODO make js/flash api for WBX Video Player
+  init: function() { return true; },
+  api: {}
+}
+

@@ -78,7 +78,7 @@ VideoJS.fn.newBehavior("player", function(player){
              "video cued" : 5
         };
 
-        var newState = stateMap(event.type || "unstarted");
+        var newState = stateMap[event.type || "unstarted"];
         if (newState !== this.state) {
             this.triggerListeners("stateChange", {data: newState});
         }

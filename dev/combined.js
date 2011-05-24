@@ -1031,6 +1031,13 @@ VideoJS.flashPlayers.htmlObject = {
   api: {} // No video API available with HTML Object embed method
 };
 
+VideoJS.flashPlayers.wbxVideoPlayer = {
+  flashPlayerVersion: 8,
+  //TODO make js/flash api for WBX Video Player
+  init: function() { return true; },
+  api: {}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Element Behaviors
 // Tell elements how to act or react
@@ -1111,7 +1118,7 @@ VideoJS.fn.newBehavior("player", function(player){
              "video cued" : 5
         };
 
-        var newState = stateMap(event.type || "unstarted");
+        var newState = stateMap[event.type || "unstarted"];
         if (newState !== this.state) {
             this.triggerListeners("stateChange", {data: newState});
         }

@@ -21,6 +21,7 @@ var VideoJS = JRClass.extend({
     this.elements = {}; // Store refs to controls elements.
     this.listeners = {}; // Store video event listeners.
     this.api = {}; // Current API to video functions (changes with player type)
+    this.state = -1; // Default player state
 
     // Hide Links. Will be shown again if "links" player is used
     this.linksFallback = this.getLinksFallback();
@@ -293,7 +294,9 @@ VideoJS.extend({
     // Safari errors if you call functions on a video that hasn't loaded yet
     videoNotReady: "Video is not ready yet (try playing the video first).",
     // Getting a QUOTA_EXCEEDED_ERR when setting local storage occasionally
-    localStorageFull: "Local Storage is Full"
+    localStorageFull: "Local Storage is Full",
+    // Video player has no javascript API
+    noFlashToJSAPI : "No Flash to JavaScript API"
   }
 });
 

@@ -55,8 +55,66 @@ VideoJS.flashPlayers.htmlObject = {
 
 VideoJS.flashPlayers.wbxVideoPlayer = {
   flashPlayerVersion: 8,
+  stateIntervals: [],
   //TODO make js/flash api for WBX Video Player
   init: function() { return true; },
-  api: {}
+  api: {
+    setupTriggers: function(){
+      // Since the player doesn't have a way to tell it how to call back to JS
+      // Here we set up a polling interval to see the current player state.
+      var videoPlayer = this;
+      var nextIntervalId = this.api.stateIntervals.length;
+      this.api.stateIntervals[nextIntervalId] = setInterval(function() {
+        try {
+          var newState = videoPlayer.flashElement.handleExternalCallback("getPlayerState");
+          if(videoPlayer.state != newState) {
+              videoPlayer.state = newState;
+              videoPlayer.triggerListeners("stateChange", {data: newState})
+          }
+        } catch (e) {
+            this.warning(VideoJS.warnings.noFlashToJSAPI);
+            clearInterval(this.api.stateIntervals[nextIntervalId]);
+        }
+      })
+    },
+
+    play: function(){ return this.flashElement.handleExternalCallback("playVideo"); },
+    pause: function(){ return this.flashElement.handleExternalCallback("pauseVideo"); },
+    paused: function(){ return this.flashElement.handleExternalCallback("getPlayerState") === 2; },
+
+    currentTime: function(){ return this.flashElement.handleExternalCallback("getCurrentTime"); },
+    setCurrentTime: function(seconds){
+      try { this.flashElement.handleExternalCallback("seekTo", seconds, false); }
+      catch(e) { this.warning(VideoJS.warnings.videoNotReady); }
+    },
+
+    duration: function(){ return this.flashElement.handleExternalCallback("getDuration"); },
+    buffered: function(){ return this.flashElement.handleExternalCallback("isPlayerLoaded"); },
+
+    //TODO get and set specific volume.
+    volume: function(){ return this.flashElement.handleExternalCallback("isMuted") ? 0 : 1; },
+    setVolume: function(percentAsDecimal){
+        if (percentAsDecimal) {
+            this.flashElement.handleExternalCallback("unMute");
+        } else {
+            this.flashElement.handleExternalCallback("mute");
+        }
+    },
+
+    width: function(){ return this.video.offsetWidth; },
+    height: function(){ return this.video.offsetHeight; },
+
+    supportsFullScreen: function(){
+      //TODO implement in flash player
+      return false;
+    },
+    enterFullScreen: function(){
+      //TODO implement in flash player
+      return false;
+    },
+    src: function(src){
+      this.flashElement.handleExternalCallback("loadVideoByUrl", src);
+    }
+  }
 }
 

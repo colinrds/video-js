@@ -21,7 +21,7 @@ along with VideoJS.  If not, see <http://www.gnu.org/licenses/>.
 // Self-executing function to prevent global vars and help with minification
 (function(window, undefined){
   var document = window.document;
-
+                         l
 // Using jresig's Class implementation http://ejohn.org/blog/simple-javascript-inheritance/
 (function(){var initializing=false, fnTest=/xyz/.test(function(){xyz;}) ? /\b_super\b/ : /.*/; this.JRClass = function(){}; JRClass.extend = function(prop) { var _super = this.prototype; initializing = true; var prototype = new this(); initializing = false; for (var name in prop) { prototype[name] = typeof prop[name] == "function" && typeof _super[name] == "function" && fnTest.test(prop[name]) ? (function(name, fn){ return function() { var tmp = this._super; this._super = _super[name]; var ret = fn.apply(this, arguments); this._super = tmp; return ret; }; })(name, prop[name]) : prop[name]; } function JRClass() { if ( !initializing && this.init ) this.init.apply(this, arguments); } JRClass.prototype = prototype; JRClass.constructor = JRClass; JRClass.extend = arguments.callee; return JRClass;};})();
 
@@ -45,6 +45,7 @@ var VideoJS = JRClass.extend({
     this.elements = {}; // Store refs to controls elements.
     this.listeners = {}; // Store video event listeners.
     this.api = {}; // Current API to video functions (changes with player type)
+    this.state = -1; // Default player state
 
     // Hide Links. Will be shown again if "links" player is used
     this.linksFallback = this.getLinksFallback();
@@ -90,7 +91,7 @@ var VideoJS = JRClass.extend({
     this.activateElement(this.box, "box");
   },
   /* Behaviors
-  ================================================================================ */
+  ===============================================================================a*/
   behaviors: {},
   newBehavior: function(name, activate, functions){
     this.behaviors[name] = activate;
@@ -209,7 +210,7 @@ VideoJS.extend({
     VideoJS.DOMReady(VideoJS.setup);
     if (fn) { VideoJS.DOMReady(fn); }
   },
-  
+
   // Backward compatability. Changed to just SetupAll
   setupAllWhenReady: function(options){ VideoJS.setupAll(options); },
 
@@ -317,7 +318,9 @@ VideoJS.extend({
     // Safari errors if you call functions on a video that hasn't loaded yet
     videoNotReady: "Video is not ready yet (try playing the video first).",
     // Getting a QUOTA_EXCEEDED_ERR when setting local storage occasionally
-    localStorageFull: "Local Storage is Full"
+    localStorageFull: "Local Storage is Full",
+    // Video player has no javascript API
+    noFlashToJSAPI : "No Flash to JavaScript API"
   }
 });
 
@@ -1033,9 +1036,67 @@ VideoJS.flashPlayers.htmlObject = {
 
 VideoJS.flashPlayers.wbxVideoPlayer = {
   flashPlayerVersion: 8,
+  stateIntervals: [],
   //TODO make js/flash api for WBX Video Player
   init: function() { return true; },
-  api: {}
+  api: {
+    setupTriggers: function(){
+      // Since the player doesn't have a way to tell it how to call back to JS
+      // Here we set up a polling interval to see the current player state.
+      var videoPlayer = this;
+      var nextIntervalId = this.api.stateIntervals.length;
+      this.api.stateIntervals[nextIntervalId] = setInterval(function() {
+        try {
+          var newState = videoPlayer.flashElement.handleExternalCallback("getPlayerState");
+          if(videoPlayer.state != newState) {
+              videoPlayer.state = newState;
+              videoPlayer.triggerListeners("stateChange", {data: newState})
+          }
+        } catch (e) {
+            this.warning(VideoJS.warnings.noFlashToJSAPI);
+            clearInterval(this.api.stateIntervals[nextIntervalId]);
+        }
+      })
+    },
+
+    play: function(){ return this.flashElement.handleExternalCallback("playVideo"); },
+    pause: function(){ return this.flashElement.handleExternalCallback("pauseVideo"); },
+    paused: function(){ return this.flashElement.handleExternalCallback("getPlayerState") === 2; },
+
+    currentTime: function(){ return this.flashElement.handleExternalCallback("getCurrentTime"); },
+    setCurrentTime: function(seconds){
+      try { this.flashElement.handleExternalCallback("seekTo", seconds, false); }
+      catch(e) { this.warning(VideoJS.warnings.videoNotReady); }
+    },
+
+    duration: function(){ return this.flashElement.handleExternalCallback("getDuration"); },
+    buffered: function(){ return this.flashElement.handleExternalCallback("isPlayerLoaded"); },
+
+    //TODO get and set specific volume.
+    volume: function(){ return this.flashElement.handleExternalCallback("isMuted") ? 0 : 1; },
+    setVolume: function(percentAsDecimal){
+        if (percentAsDecimal) {
+            this.flashElement.handleExternalCallback("unMute");
+        } else {
+            this.flashElement.handleExternalCallback("mute");
+        }
+    },
+
+    width: function(){ return this.video.offsetWidth; },
+    height: function(){ return this.video.offsetHeight; },
+
+    supportsFullScreen: function(){
+      //TODO implement in flash player
+      return false;
+    },
+    enterFullScreen: function(){
+      //TODO implement in flash player
+      return false;
+    },
+    src: function(src){
+      this.flashElement.handleExternalCallback("loadVideoByUrl", src);
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

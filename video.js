@@ -91,7 +91,7 @@ var VideoJS = JRClass.extend({
     this.activateElement(this.box, "box");
   },
   /* Behaviors
-  ===============================================================================a*/
+  ================================================================================ */
   behaviors: {},
   newBehavior: function(name, activate, functions){
     this.behaviors[name] = activate;
@@ -210,7 +210,7 @@ VideoJS.extend({
     VideoJS.DOMReady(VideoJS.setup);
     if (fn) { VideoJS.DOMReady(fn); }
   },
-
+  
   // Backward compatability. Changed to just SetupAll
   setupAllWhenReady: function(options){ VideoJS.setupAll(options); },
 
@@ -384,14 +384,19 @@ VideoJS.fn.extend({
   getDuration: function() { return this.api.duration.apply(this); },
 
   buffered: function(){
-    var buffered = this.api.buffered.apply(this),
-        start = 0, end = this.values.bufferEnd = this.values.bufferEnd || 0,
-        timeRange;
+    try {
+      var buffered = this.api.buffered.apply(this),
+          start = 0, end = this.values.bufferEnd = this.values.bufferEnd || 0,
+          timeRange;
 
-    if (buffered && buffered.length > 0 && buffered.end(0) > end) {
-      end = buffered.end(0);
-      // Storing values allows them be overridden by setBufferedFromProgress
-      this.values.bufferEnd = end;
+      if (buffered && buffered.length > 0 && buffered.end(0) > end) {
+        end = buffered.end(0);
+        // Storing values allows them be overridden by setBufferedFromProgress
+        this.values.bufferEnd = end;
+      }
+    } catch(error) {
+      start = 0;
+      end = 0;
     }
 
     return this.createTimeRange(start, end);
@@ -1070,7 +1075,6 @@ VideoJS.flashPlayers.wbxVideoPlayer = {
     },
 
     duration: function(){ return this.flashElement.handleExternalCallback("getDuration"); },
-    buffered: function(){ return this.flashElement.handleExternalCallback("isPlayerLoaded"); },
 
     //TODO get and set specific volume.
     volume: function(){ return this.flashElement.handleExternalCallback("isMuted") ? 0 : 1; },

@@ -89,7 +89,6 @@ VideoJS.flashPlayers.wbxVideoPlayer = {
     },
 
     duration: function(){ return this.flashElement.handleExternalCallback("getDuration"); },
-    buffered: function(){ return this.flashElement.handleExternalCallback("isPlayerLoaded"); },
 
     //TODO get and set specific volume.
     volume: function(){ return this.flashElement.handleExternalCallback("isMuted") ? 0 : 1; },
